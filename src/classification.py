@@ -13,6 +13,7 @@ from transformers import (
     TrainingArguments,
     get_cosine_schedule_with_warmup
 )
+from datasets import Dataset
 from sklearn.metrics import log_loss
 from scipy.special import softmax
 from peft import LoraConfig, TaskType, get_peft_model
@@ -40,8 +41,11 @@ class CustomTrainer(Trainer):
 
 def compute_metrics(p):
     logits = p.predictions
-    probabilities = softmax(logits, axis=-1)
+    print(logits)
     labels = p.label_ids
+    print(labels)
+    probabilities = softmax(logits, axis=-1)
+    print(probabilities)
 
     return {"log_loss": log_loss(labels, probabilities)}
 
@@ -50,11 +54,12 @@ def train(args):
     tokenizer = AutoTokenizer.from_pretrained(
         args.model_name,
         trust_remote_code=True,
+        use_fast=False,
         token=args.huggingface_api
     )
     if "Llama" in args.model_name:
         tokenizer.add_special_tokens({"pad_token": "<pad>"})
-    tokenizer.add_special_tokens({"sep_token": "[sep]"})
+    tokenizer.add_special_tokens({"sep_token": "[SEP]"})
 
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
@@ -85,7 +90,7 @@ def train(args):
         bias="none",
         target_modules=[
             "q_proj", "k_proj", "v_proj",
-            "o_proj"
+            "gate_proj", "up_proj", "down_proj"
         ]
     )
 
@@ -98,6 +103,9 @@ def train(args):
     train, val = classification_data_preprocessing(args.train_file_path)
     train["input"] = train["full_chat_a"] + "[SEP]" + train["full_chat_b"]
     val["input"] = val["full_chat_a"] + "[SEP]" + val["full_chat_b"]
+
+    ds_train = Dataset.from_pandas(train)
+    ds_val = Dataset.from_pandas(val)
 
     ds_train = ds_train.map(tokenize).remove_columns(
         ["id", "prompt", "response_a", "response_b", "full_chat_a", "full_chat_b"]
@@ -132,7 +140,8 @@ def train(args):
         report_to="none",
         overwrite_output_dir=True,
         greater_is_better=False,
-        fp16=True,
+        bf16=True if torch.cuda.is_bf16_supported() else False,
+        fp16=False if torch.cuda.is_bf16_supported() else True,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         logging_steps=args.logging_steps,
         evaluation_strategy="steps",

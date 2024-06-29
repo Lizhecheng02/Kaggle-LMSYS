@@ -24,7 +24,7 @@ def classification_data_preprocessing(df_path):
 
     df.drop(columns=["model_a", "model_b"], axis=1, inplace=True)
     df.dropna(inplace=True)
-    df["label"] = df.apply(lambda row: 0 if row["winner_model_a"] == 1 else (1 if row["winner_model_b"] == 1 else 2), axis=1)
+    df["labels"] = df.apply(lambda row: 0 if row["winner_model_a"] == 1 else (1 if row["winner_model_b"] == 1 else 2), axis=1)
     df.drop(columns=["winner_model_a", "winner_model_b", "winner_tie"], axis=1, inplace=True)
 
     full_chat_a = []

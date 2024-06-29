@@ -5,3 +5,6 @@ wandb
 scikit-learn
 tqdm
 peft
+bitsandbytes
+datasets
+sentencepiece
