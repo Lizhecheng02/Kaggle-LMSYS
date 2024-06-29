@@ -1,0 +1,7 @@
+pandas
+transformers
+kaggle
+wandb
+scikit-learn
+tqdm
+peft
