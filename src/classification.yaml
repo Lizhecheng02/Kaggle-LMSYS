@@ -15,3 +15,4 @@ MODEL: "google/gemma-2b"
 lora_r: 64
 lora_alpha: 16
 lora_dropout: 0.05
+huggingface_api: ""

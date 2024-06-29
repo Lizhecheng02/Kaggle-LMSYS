@@ -9,7 +9,6 @@ from transformers import (
     AutoModelForSequenceClassification,
     BitsAndBytesConfig,
     AutoTokenizer,
-    DataCollatorWithPadding,
     Trainer,
     TrainingArguments,
     get_cosine_schedule_with_warmup
@@ -53,7 +52,9 @@ def train(args):
         trust_remote_code=True,
         token=args.huggingface_api
     )
-    tokenizer.add_special_tokens({"pad_token": "<pad>", "sep_token": "[sep]"})
+    if "Llama" in args.model_name:
+        tokenizer.add_special_tokens({"pad_token": "<pad>"})
+    tokenizer.add_special_tokens({"sep_token": "[sep]"})
 
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
@@ -70,6 +71,7 @@ def train(args):
         trust_remote_code=True,
         token=args.huggingface_api
     )
+    print(model)
     model.config.pad_token_id = tokenizer.pad_token_id
     model.resize_token_embeddings(len(tokenizer))
     print("New tokenizer length:", len(tokenizer))
