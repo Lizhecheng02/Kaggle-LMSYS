@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import os
 import torch
 import torch.nn as nn
@@ -18,6 +17,7 @@ from sklearn.metrics import log_loss
 from scipy.special import softmax
 from peft import LoraConfig, TaskType, get_peft_model, prepare_model_for_kbit_training
 from utils import load_config, classification_data_preprocessing
+from bitsandbytes.optim import AdamW8bit
 warnings.filterwarnings("ignore")
 
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
@@ -89,6 +89,7 @@ def train(args):
         r=args.lora_r,
         lora_alpha=args.lora_alpha,
         lora_dropout=args.lora_dropout,
+        bias="none",
         target_modules=[
             "q_proj", "k_proj", "v_proj",
             "gate_proj", "up_proj", "down_proj"
@@ -156,7 +157,7 @@ def train(args):
         save_total_limit=args.save_total_limit
     )
 
-    optimizer = torch.optim.AdamW(
+    optimizer = AdamW8bit(
         model.parameters(),
         lr=training_args.learning_rate
     )
