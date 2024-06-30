@@ -16,7 +16,7 @@ from transformers import (
 from datasets import Dataset
 from sklearn.metrics import log_loss
 from scipy.special import softmax
-from peft import LoraConfig, TaskType, get_peft_model
+from peft import LoraConfig, TaskType, get_peft_model, prepare_model_for_kbit_training
 from utils import load_config, classification_data_preprocessing
 warnings.filterwarnings("ignore")
 
@@ -77,17 +77,18 @@ def train(args):
         token=args.huggingface_api
     )
     print(model)
+
     model.config.pad_token_id = tokenizer.pad_token_id
     model.resize_token_embeddings(len(tokenizer))
     print("New tokenizer length:", len(tokenizer))
 
+    model = prepare_model_for_kbit_training(model)
+
     peft_config = LoraConfig(
         task_type=TaskType.SEQ_CLS,
-        inference_mode=False,
         r=args.lora_r,
         lora_alpha=args.lora_alpha,
         lora_dropout=args.lora_dropout,
-        bias="none",
         target_modules=[
             "q_proj", "k_proj", "v_proj",
             "gate_proj", "up_proj", "down_proj"
