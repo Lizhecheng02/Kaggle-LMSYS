@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import argparse
 import warnings
+import wandb
 from transformers import (
     AutoModelForSequenceClassification,
     BitsAndBytesConfig,
@@ -49,6 +50,13 @@ def compute_metrics(p):
 
 
 def train(args):
+    wandb.login(key="c465dd55c08ec111e077cf0454ba111b3a764a78")
+    run = wandb.init(
+        project=f"{args.model_name.split('/')[-1]}_cls",
+        job_type="training",
+        anonymous="allow"
+    )
+
     tokenizer = AutoTokenizer.from_pretrained(
         args.model_name,
         trust_remote_code=True,
@@ -147,8 +155,8 @@ def train(args):
         per_device_train_batch_size=args.per_device_train_batch_size,
         per_device_eval_batch_size=args.per_device_eval_batch_size,
         num_train_epochs=args.num_train_epochs,
-        output_dir="output",
-        report_to="none",
+        output_dir=f"{args.model_name.split('/')[-1]}_cls_output",
+        report_to="wandb",
         overwrite_output_dir=True,
         greater_is_better=False,
         bf16=True if torch.cuda.is_bf16_supported() else False,
