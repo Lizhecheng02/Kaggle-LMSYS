@@ -55,11 +55,11 @@ def train(args):
         args.model_name,
         trust_remote_code=True,
         use_fast=False,
+        add_eos_token=True,
         token=args.huggingface_api
     )
     if "Llama" in args.model_name:
         tokenizer.add_special_tokens({"pad_token": "<pad>"})
-    tokenizer.add_special_tokens({"sep_token": "[SEP]"})
 
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
@@ -78,10 +78,15 @@ def train(args):
     )
     print(model)
 
-    model.config.pad_token_id = tokenizer.pad_token_id
-    model.resize_token_embeddings(len(tokenizer))
+    try:
+        model.config.pad_token_id = tokenizer.pad_token_id
+    except:
+        tokenizer.pad_token = tokenizer.eos_token
+        model.config.pad_token_id = tokenizer.pad_token_id
+    # model.resize_token_embeddings(len(tokenizer))
     print("New tokenizer length:", len(tokenizer))
 
+    model.gradient_checkpointing_enable()
     model = prepare_model_for_kbit_training(model)
 
     peft_config = LoraConfig(
@@ -103,8 +108,8 @@ def train(args):
         return tokenizer(sample["input"], max_length=args.max_length, truncation=True)
 
     train, val = classification_data_preprocessing(args.train_file_path)
-    train["input"] = train["full_chat_a"] + "[SEP]" + train["full_chat_b"]
-    val["input"] = val["full_chat_a"] + "[SEP]" + val["full_chat_b"]
+    train["input"] = train["full_chat_a"] + "########" + train["full_chat_b"]
+    val["input"] = val["full_chat_a"] + "########" + val["full_chat_b"]
 
     ds_train = Dataset.from_pandas(train)
     ds_val = Dataset.from_pandas(val)
