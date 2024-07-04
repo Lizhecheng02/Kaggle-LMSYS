@@ -163,11 +163,13 @@ def train(args):
         fp16=False if torch.cuda.is_bf16_supported() else True,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         logging_steps=args.logging_steps,
+        do_eval=True,
         evaluation_strategy="steps",
         eval_steps=args.eval_steps,
         save_strategy="steps",
         save_steps=args.save_steps,
         load_best_model_at_end=True,
+        save_only_model=True,
         metric_for_best_model="log_loss",
         weight_decay=args.weight_decay,
         save_total_limit=args.save_total_limit
