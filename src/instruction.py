@@ -3,6 +3,8 @@ import os
 import torch
 import random
 import numpy as np
+import yaml
+import argparse
 import torch
 from typing import Any, Optional, Union
 from time import gmtime, strftime
@@ -222,13 +224,12 @@ seed_everything(42)
 
 
 class InstructionDataSet(Dataset):
-    def __init__(self, model_name, data, tokenizer, max_source_length, max_target_length, all_in_one):
+    def __init__(self, model_name, data, tokenizer, max_source_length, all_in_one):
         super(InstructionDataSet, self).__init__()
         self.model_name = model_name
         self.data = data
         self.tokenizer = tokenizer
         self.max_source_length = max_source_length
-        self.max_target_length = max_target_length
         self.all_in_one = all_in_one
 
     def __len__(self):
@@ -441,7 +442,7 @@ def train(args):
 
     if args.split == False:
         _, df_valid = load_split_data(
-            "dataset/train.csv",
+            "../data/train.csv",
             args.prompt_type,
             args.MAX_INPUT,
             True,
@@ -476,7 +477,6 @@ def train(args):
             df_train,
             tokenizer,
             args.MAX_INPUT,
-            1,
             args.all_in_one
         )
         torch.save(tokenized_dataset, train_cache_path)
@@ -489,34 +489,18 @@ def train(args):
             df_valid,
             tokenizer,
             args.MAX_INPUT,
-            1,
             args.all_in_one
         )
         torch.save(tokenized_dataset_valid, valid_cache_path)
 
     global A_TOKEN_IDS
-    A_TOKEN_IDS = tokenizer(
-        "A",
-        add_special_tokens=True,
-        truncation=True,
-        max_length=1024
-    )["input_ids"][1:]
+    A_TOKEN_IDS = tokenizer("A", add_special_tokens=True, truncation=True, max_length=1024)["input_ids"][1:]
 
     global B_TOKEN_IDS
-    B_TOKEN_IDS = tokenizer(
-        "B",
-        add_special_tokens=True,
-        truncation=True,
-        max_length=1024
-    )["input_ids"][1:]
+    B_TOKEN_IDS = tokenizer("B", add_special_tokens=True, truncation=True, max_length=1024)["input_ids"][1:]
 
     global C_TOKEN_IDS
-    C_TOKEN_IDS = tokenizer(
-        "C",
-        add_special_tokens=True,
-        truncation=True,
-        max_length=1024
-    )["input_ids"][1:]
+    C_TOKEN_IDS = tokenizer("C", add_special_tokens=True, truncation=True, max_length=1024)["input_ids"][1:]
 
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
@@ -586,7 +570,6 @@ def train(args):
         save_steps=args.save_steps,
         load_best_model_at_end=False,
         metric_for_best_model="log_loss",
-        lr_scheduler_type="cosine",
         weight_decay=args.weight_decay,
         save_total_limit=10,
         label_smoothing_factor=args.label_smoothing_factor
@@ -599,12 +582,8 @@ def train(args):
 
     scheduler = get_cosine_schedule_with_warmup(
         optimizer,
-        num_warmup_steps=training_args.num_train_epochs *
-        int(len(tokenized_dataset) * 1.0 / training_args.per_device_train_batch_size /
-            training_args.gradient_accumulation_steps) * args.warm_up_ratio,
-        num_training_steps=training_args.num_train_epochs *
-        int(len(tokenized_dataset) * 1.0 / training_args.per_device_train_batch_size /
-            training_args.gradient_accumulation_steps),
+        num_warmup_steps=training_args.num_train_epochs * int(len(tokenized_dataset) * 1.0 / training_args.per_device_train_batch_size / training_args.gradient_accumulation_steps) * args.warmup_ratio,
+        num_training_steps=training_args.num_train_epochs * int(len(tokenized_dataset) * 1.0 / training_args.per_device_train_batch_size / training_args.gradient_accumulation_steps),
         num_cycles=1.5
     )
 
@@ -625,3 +604,22 @@ def train(args):
 
     trainer.train()
     wandb.finish()
+
+
+def load_config(config_file):
+    with open(config_file, "r") as file:
+        config = yaml.safe_load(file)
+    return config
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="")
+    parser.add_argument("--config", default="instruction.yaml", type=str, help=".yaml file path", required=False)
+    args = parser.parse_args()
+    config = load_config(args.config)
+
+    for key, value in config.items():
+        parser.add_argument(f"--{key}", default=value, type=type(value))
+
+    args = parser.parse_args()
+    train(args)
