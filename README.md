@@ -26,6 +26,6 @@ sudo apt install unzip
 #### 2. Download Dataset
 ```bash
 cd data
-kaggle competitions download -c lmsys-chatbot-arena
-unzip lmsys-chatbot-arena.zip
+kaggle datasets download -d lizhecheng/lmsys-datasets
+unzip lmsys-datasets.zip
 ```
