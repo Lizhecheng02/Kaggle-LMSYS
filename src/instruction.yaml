@@ -20,6 +20,7 @@ logging_steps: 100
 eval_steps: 300
 save_steps: 300
 weight_decay: 1.0e-3
+use_8_bit_optimizer: True
 MAX_INPUT: 3000
 MODEL: "microsoft/Phi-3-mini-4k-instruct"
 awp_lr: 0

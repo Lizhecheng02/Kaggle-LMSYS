@@ -27,8 +27,10 @@ from peft import (
     PeftModel,
     get_peft_model,
     LoraConfig,
-    TaskType
+    TaskType,
+    prepare_model_for_kbit_training
 )
+from bitsandbytes.optim import AdamW8bit
 from utils_prime import load_split_data, load_split_with_extra_data
 
 
@@ -251,52 +253,87 @@ class InstructionDataSet(Dataset):
 
         if "gemma" in self.model_name:
             templete_part2 = "\n###options\nA. Model A\nB. Model B\nC. Tie\n<end_of_turn>\n"
+            templete_part2_input_ids = self.tokenizer(
+                text=templete_part2,
+                add_special_tokens=True,
+                padding=False
+            )["input_ids"][1:]
         elif "Phi" in self.model_name:
             templete_part2 = "\n###options\nA. Model A\nB. Model B\nC. Tie\n<|end|>\n"
-
-        templete_part2_input_ids = self.tokenizer(
-            text=templete_part2,
-            add_special_tokens=True,
-            padding=False
-        )["input_ids"][1:]
+            templete_part2_input_ids = self.tokenizer(
+                text=templete_part2,
+                add_special_tokens=True,
+                padding=False
+            )["input_ids"]
 
         if "gemma" in self.model_name:
             templete_part3 = "<start_of_turn>model\n"
+            templete_part3_input_ids = self.tokenizer(
+                text=templete_part3,
+                add_special_tokens=True,
+                padding=False
+            )["input_ids"][1:]
         elif "Phi" in self.model_name:
             templete_part3 = "<|assistant|>\n"
-            
-        templete_part3_input_ids = self.tokenizer(
-            text=templete_part3,
-            add_special_tokens=True,
-            padding=False
-        )["input_ids"][1:]
+            templete_part3_input_ids = self.tokenizer(
+                text=templete_part3,
+                add_special_tokens=True,
+                padding=False
+            )["input_ids"]
 
         if self.all_in_one:
             prompt_response = now_data["prompt_response"]
-            prompt_response_ids = self.tokenizer(
-                text=prompt_response,
-                add_special_tokens=True,
-                truncation=True,
-                max_length=self.max_source_length,
-                padding=False
-            )["input_ids"][1:]
+            if "gemma" in self.model_name:
+                prompt_response_ids = self.tokenizer(
+                    text=prompt_response,
+                    add_special_tokens=True,
+                    truncation=True,
+                    max_length=self.max_source_length,
+                    padding=False
+                )["input_ids"][1:]
+            elif "Phi" in self.model_name:
+                prompt_response_ids = self.tokenizer(
+                    text=prompt_response,
+                    add_special_tokens=True,
+                    truncation=True,
+                    max_length=self.max_source_length,
+                    padding=False
+                )["input_ids"]
         else:
             r_a = now_data["instruction_a"]
             r_b = now_data["instruction_b"]
-            model_a_input_ids = self.tokenizer(
-                text=r_a,
-                add_special_tokens=True,
-                truncation=True,
-                max_length=self.max_source_length // 2,
-                padding=False
-            )["input_ids"]
-            model_b_input_ids = self.tokenizer(
-                text=r_b,
-                add_special_tokens=True,
-                truncation=True,
-                max_length=self.max_source_length // 2,
-                padding=False
-            )["input_ids"]
+            if "gemma" in self.model_name:
+                model_a_input_ids = self.tokenizer(
+                    text=r_a,
+                    add_special_tokens=True,
+                    truncation=True,
+                    max_length=self.max_source_length // 2,
+                    padding=False
+                )["input_ids"][1:]
+                model_b_input_ids = self.tokenizer(
+                    text=r_b,
+                    add_special_tokens=True,
+                    truncation=True,
+                    max_length=self.max_source_length // 2,
+                    padding=False
+                )["input_ids"][1:]
+
+            elif "Phi" in self.model_name:
+                model_a_input_ids = self.tokenizer(
+                    text=r_a,
+                    add_special_tokens=True,
+                    truncation=True,
+                    max_length=self.max_source_length // 2,
+                    padding=False
+                )["input_ids"]
+                model_b_input_ids = self.tokenizer(
+                    text=r_b,
+                    add_special_tokens=True,
+                    truncation=True,
+                    max_length=self.max_source_length // 2,
+                    padding=False
+                )["input_ids"]
+                
             prompt_response_ids = model_a_input_ids + model_b_input_ids
 
         label = now_data["label"]
@@ -458,7 +495,7 @@ def train(args):
     if args.test_mode:
         df_valid = df_valid.loc[:20, :].reset_index(drop=True)
 
-    ## 不要验证集
+    ## 验证集固定为train中的一部分
     if args.split == False:
         _, df_valid = load_split_data(
             args.original_train_path,
@@ -512,14 +549,20 @@ def train(args):
         )
         torch.save(tokenized_dataset_valid, valid_cache_path)
 
-    global A_TOKEN_IDS
-    A_TOKEN_IDS = tokenizer("A", add_special_tokens=True, truncation=True, max_length=1024)["input_ids"][1:]
-
-    global B_TOKEN_IDS
-    B_TOKEN_IDS = tokenizer("B", add_special_tokens=True, truncation=True, max_length=1024)["input_ids"][1:]
-
-    global C_TOKEN_IDS
-    C_TOKEN_IDS = tokenizer("C", add_special_tokens=True, truncation=True, max_length=1024)["input_ids"][1:]
+    if "gemma" in args.model_name:
+        global A_TOKEN_IDS
+        A_TOKEN_IDS = tokenizer("A", add_special_tokens=True, truncation=True, max_length=1024)["input_ids"][1:]
+        global B_TOKEN_IDS
+        B_TOKEN_IDS = tokenizer("B", add_special_tokens=True, truncation=True, max_length=1024)["input_ids"][1:]
+        global C_TOKEN_IDS
+        C_TOKEN_IDS = tokenizer("C", add_special_tokens=True, truncation=True, max_length=1024)["input_ids"][1:]
+    elif "Phi" in args.model_name:
+        global A_TOKEN_IDS
+        A_TOKEN_IDS = tokenizer("A", add_special_tokens=True, truncation=True, max_length=1024)["input_ids"]
+        global B_TOKEN_IDS
+        B_TOKEN_IDS = tokenizer("B", add_special_tokens=True, truncation=True, max_length=1024)["input_ids"]
+        global C_TOKEN_IDS
+        C_TOKEN_IDS = tokenizer("C", add_special_tokens=True, truncation=True, max_length=1024)["input_ids"]
 
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
@@ -535,6 +578,7 @@ def train(args):
         torch_dtype=torch.bfloat16,
         device_map="auto",
         trust_remote_code=True,
+        low_cpu_mem_usage=True,
         attn_implementation="eager"
     )
 
@@ -562,7 +606,15 @@ def train(args):
 
     print(model.print_trainable_parameters())
 
-    model.enable_gradient_checkpointing()
+    if bnb_config.bnb_4bit_compute_dtype == torch.float16:
+        model.config.use_cache = False
+        model.gradient_checkpointing_enable()
+        model.enable_input_require_grads()
+        model = prepare_model_for_kbit_training(model)
+    elif bnb_config.bnb_4bit_compute_dtype == torch.bfloat16:
+        model.config.use_cache = False
+        model.gradient_checkpointing_enable()
+        model.enable_input_require_grads()
 
     data_collator = DataCollatorForInstruction(
         tokenizer,
@@ -590,14 +642,21 @@ def train(args):
         load_best_model_at_end=False,
         metric_for_best_model="log_loss",
         weight_decay=args.weight_decay,
+        save_only_model=True,
         save_total_limit=10,
         label_smoothing_factor=args.label_smoothing_factor
     )
 
-    optimizer = torch.optim.AdamW(
-        model.parameters(),
-        lr=training_args.learning_rate
-    )
+    if args.use_8_bit_optimizer:
+        optimizer = AdamW8bit(
+            model.parameters(),
+            lr=training_args.learning_rate
+        )
+    else:
+        optimizer = torch.optim.AdamW(
+            model.parameters(),
+            lr=training_args.learning_rate
+        )
 
     scheduler = get_cosine_schedule_with_warmup(
         optimizer,
