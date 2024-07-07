@@ -132,6 +132,7 @@ def load_split_data(data_path, prompt_type, max_length, if_train, split):
         data = prompt_1(data)
     elif prompt_type == 2:
         data = prompt_2(data, max_length * 0.75, if_train)
+
     if split:
         idx = data.id.unique()
         valid_idx = [idx[i] for i in range(len(idx)) if i % 20 == 0]
@@ -141,3 +142,50 @@ def load_split_data(data_path, prompt_type, max_length, if_train, split):
         return train, valid
 
     return data, None
+
+
+def load_split_with_extra_data(original_train_path, extra_train_path, prompt_type, max_length, if_train, split):
+    if "csv" in original_train_path:
+        original_train_data = pd.read_csv(original_train_path)
+        original_train_data = load_json(original_train_data)
+    elif "json" in original_train_path:
+        original_train_data = pd.read_json(original_train_path)
+
+    if "csv" in extra_train_path:
+        extra_train_data = pd.read_csv(extra_train_path)
+        extra_train_data = load_json(extra_train_data)
+    elif "json" in extra_train_path:
+        extra_train_data = pd.read_json(extra_train_path)
+
+    original_train_data = original_train_data.explode(["prompt", "response_a", "response_b"]).reset_index(drop=True)
+    extra_train_data = extra_train_data.explode(["prompt", "response_a", "response_b"]).reset_index(drop=True)
+
+    original_train_data = original_train_data.fillna("None")
+    extra_train_data = extra_train_data.fillna("None")
+    original_train_data["response_a"] = original_train_data["response_a"].apply(lambda x: "None" if len(x) == 0 else x)
+    original_train_data["response_b"] = original_train_data["response_b"].apply(lambda x: "None" if len(x) == 0 else x)
+    extra_train_data["response_a"] = extra_train_data["response_a"].apply(lambda x: "None" if len(x) == 0 else x)
+    extra_train_data["response_b"] = extra_train_data["response_b"].apply(lambda x: "None" if len(x) == 0 else x)
+
+    if if_train:
+        original_train_data["label"] = original_train_data.apply(lambda x: get_label(x), axis=1)
+        extra_train_data["label"] = extra_train_data.apply(lambda x: get_label(x), axis=1)
+
+    if prompt_type == 1:
+        original_train_data = prompt_1(original_train_data)
+        extra_train_data = prompt_1(extra_train_data)
+    elif prompt_type == 2:
+        original_train_data = prompt_2(original_train_data, max_length * 0.75, if_train)
+        extra_train_data = prompt_2(extra_train_data, max_length * 0.75, if_train)
+    
+    if split:
+        idx = original_train_data.id.unique()
+        valid_idx = [idx[i] for i in range(len(idx)) if i % 20 == 0]
+
+        valid = original_train_data.loc[original_train_data.id.isin(valid_idx), ].reset_index(drop=True)
+        train = original_train_data.loc[~original_train_data.id.isin(valid_idx), ].reset_index(drop=True)
+
+        train = pd.concat([train, extra_train_data]).reset_index(drop=True)
+        return train, valid
+    
+    return pd.concat([original_train_data, extra_train_data]).reset_index(drop=True), None

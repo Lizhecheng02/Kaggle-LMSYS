@@ -1,11 +1,15 @@
-data_path: "dataset/lmsys-chatbot_arena_conversations-30k.csv"
+original_train_path: "../data/train.csv"
+extra_train_path: "../data/extra_train.csv"
+use_both_train_and_extra: True
+use_only_train: False
+use_only_extra: False
 train_data: "dataset/random_all_in_one_train.csv"
 valid_data: "dataset/random_all_in_one_valid.csv"
 resume_from_checkpoint: ""
 all_in_one: True
 prompt_type: 2
 if_train: True
-split: False
+split: True
 per_device_train_batch_size: 1
 per_device_eval_batch_size: 1
 learning_rate: 1.0e-4

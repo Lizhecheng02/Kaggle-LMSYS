@@ -29,7 +29,7 @@ from peft import (
     LoraConfig,
     TaskType
 )
-from utils_prime import load_split_data
+from utils_prime import load_split_data, load_split_with_extra_data
 
 
 class AWP:
@@ -429,20 +429,39 @@ def train(args):
         anonymous="allow"
     )
 
-    df_train, df_valid = load_split_data(
-        args.data_path,
-        args.prompt_type,
-        args.MAX_INPUT,
-        args.if_train,
-        args.split
-    )
+    if args.use_both_train_and_extra:
+        df_train, df_valid = load_split_with_extra_data(
+            args.original_train_path,
+            args.extra_train_path,
+            args.prompt_type,
+            args.MAX_INPUT,
+            args.if_train,
+            args.split
+        )
+    elif args.use_only_train:
+        df_train, df_valid = load_split_data(
+            args.original_train_path,
+            args.prompt_type,
+            args.MAX_INPUT,
+            args.if_train,
+            args.split
+        )
+    elif args.use_only_extra:
+        df_train, df_valid = load_split_data(
+            args.extra_train_path,
+            args.prompt_type,
+            args.MAX_INPUT,
+            args.if_train,
+            args.split
+        )
 
     if args.test_mode:
         df_valid = df_valid.loc[:20, :].reset_index(drop=True)
 
+    ## 不要验证集
     if args.split == False:
         _, df_valid = load_split_data(
-            "../data/train.csv",
+            args.original_train_path,
             args.prompt_type,
             args.MAX_INPUT,
             True,
