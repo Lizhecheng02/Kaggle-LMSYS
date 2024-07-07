@@ -9,7 +9,6 @@ import torch
 from typing import Any, Optional, Union
 from time import gmtime, strftime
 from dataclasses import dataclass
-from torch.utils.data import Dataset
 from datasets import Dataset
 from sklearn.metrics import log_loss
 from transformers import (
@@ -120,7 +119,7 @@ class CustomTrainer(Trainer):
     def save_model(self, output_dir=None, _internal_call=False):
         output_dir = output_dir if output_dir is not None else self.args.output_dir
         os.makedirs(output_dir, exist_ok=True)
-        print(f"Saving model checkpoint to {output_dir}")
+        # print(f"Saving model checkpoint to {output_dir}")
         model_to_save = self.model
         state_dict = {
             k: v.to("cpu") for k, v in model_to_save.named_parameters() if v.requires_grad
@@ -137,7 +136,6 @@ class CustomTrainer(Trainer):
         if self.tokenizer is not None:
             self.tokenizer.save_pretrained(output_dir)
 
-        print(self.args)
         torch.save(self.args, os.path.join(output_dir, TRAINING_ARGS_NAME, ))
 
     def training_step(self, model, inputs):
@@ -224,6 +222,7 @@ def seed_everything(seed=None):
 
 seed_everything(42)
 
+from torch.utils.data import Dataset
 
 class InstructionDataSet(Dataset):
     def __init__(self, model_name, data, tokenizer, max_source_length, all_in_one):
@@ -509,7 +508,8 @@ def train(args):
     tokenizer = AutoTokenizer.from_pretrained(
         args.MODEL,
         trust_remote_code=True,
-        truncation_side="left"
+        truncation_side="left",
+        use_fast=False
     )
 
     print(f"arg is {args}")
@@ -549,19 +549,16 @@ def train(args):
         )
         torch.save(tokenized_dataset_valid, valid_cache_path)
 
+    global A_TOKEN_IDS
+    global B_TOKEN_IDS
+    global C_TOKEN_IDS
     if "gemma" in args.model_name:
-        global A_TOKEN_IDS
         A_TOKEN_IDS = tokenizer("A", add_special_tokens=True, truncation=True, max_length=1024)["input_ids"][1:]
-        global B_TOKEN_IDS
         B_TOKEN_IDS = tokenizer("B", add_special_tokens=True, truncation=True, max_length=1024)["input_ids"][1:]
-        global C_TOKEN_IDS
         C_TOKEN_IDS = tokenizer("C", add_special_tokens=True, truncation=True, max_length=1024)["input_ids"][1:]
     elif "Phi" in args.model_name:
-        global A_TOKEN_IDS
         A_TOKEN_IDS = tokenizer("A", add_special_tokens=True, truncation=True, max_length=1024)["input_ids"]
-        global B_TOKEN_IDS
         B_TOKEN_IDS = tokenizer("B", add_special_tokens=True, truncation=True, max_length=1024)["input_ids"]
-        global C_TOKEN_IDS
         C_TOKEN_IDS = tokenizer("C", add_special_tokens=True, truncation=True, max_length=1024)["input_ids"]
 
     bnb_config = BitsAndBytesConfig(
@@ -588,8 +585,11 @@ def train(args):
         print(f"Using Checkpoint: {checkpoint}")
         model = PeftModel.from_pretrained(model, checkpoint, is_trainable=True)
         print(model)
-
     else:
+        if "gemma" in args.MODEL:
+            target_modules = ["q_proj", "k_proj", "v_proj", "gate_proj", "up_proj", "down_proj"]
+        elif "Phi" in args.MODEL:
+            target_modules = ["qkv_proj", "gate_up_proj", "down_proj"]
         peft_config = LoraConfig(
             task_type=TaskType.CAUSAL_LM,
             inference_mode=False,
@@ -597,10 +597,7 @@ def train(args):
             lora_alpha=args.lora_alpha,
             lora_dropout=args.lora_dropout,
             # bias="none",
-            target_modules=[
-                "q_proj", "k_proj", "v_proj",
-                "gate_proj", "up_proj", "down_proj"
-            ]
+            target_modules=target_modules
         )
         model = get_peft_model(model, peft_config)
 
@@ -635,7 +632,7 @@ def train(args):
         fp16=True,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         logging_steps=args.logging_steps,
-        evaluation_strategy="steps",
+        eval_strategy="steps",
         eval_steps=args.eval_steps,
         save_strategy="steps",
         save_steps=args.save_steps,

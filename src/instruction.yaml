@@ -1,5 +1,5 @@
 original_train_path: "../data/train.csv"
-extra_train_path: "../data/extra_train.csv"
+extra_train_path: "../data/lmsys-chatbot_arena_conversations-30k.csv"
 use_both_train_and_extra: True
 use_only_train: False
 use_only_extra: False
@@ -16,7 +16,7 @@ learning_rate: 1.0e-4
 warmup_ratio: 0.1
 num_train_epochs: 2
 gradient_accumulation_steps: 16
-logging_steps: 100
+logging_steps: 50
 eval_steps: 300
 save_steps: 300
 weight_decay: 1.0e-3
