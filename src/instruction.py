@@ -658,7 +658,6 @@ def train(args):
         optimizer,
         num_warmup_steps=training_args.num_train_epochs * int(len(tokenized_dataset) * 1.0 / training_args.per_device_train_batch_size / training_args.gradient_accumulation_steps) * args.warmup_ratio,
         num_training_steps=training_args.num_train_epochs * int(len(tokenized_dataset) * 1.0 / training_args.per_device_train_batch_size / training_args.gradient_accumulation_steps),
-        num_cycles=1.5
     )
 
     trainer = CustomTrainer(

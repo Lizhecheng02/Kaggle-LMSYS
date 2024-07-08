@@ -12,7 +12,7 @@ if_train: True
 split: True
 per_device_train_batch_size: 1
 per_device_eval_batch_size: 1
-learning_rate: 1.0e-4
+learning_rate: 2.0e-4
 warmup_ratio: 0.1
 num_train_epochs: 2
 gradient_accumulation_steps: 16
