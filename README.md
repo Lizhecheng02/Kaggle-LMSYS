@@ -23,9 +23,15 @@ export KAGGLE_KEY="your_api_key"
 sudo apt install unzip
 ```
 
-#### 2. Download Dataset
+#### 3. Download Datasets
 ```bash
 cd data
 kaggle datasets download -d lizhecheng/lmsys-datasets
 unzip lmsys-datasets.zip
+```
+
+#### 4. Download LoRA Adapters
+```bash
+kaggle datasets download -d lizhecheng/lmsys-lora
+unzip lmsys-lora.zip
 ```
