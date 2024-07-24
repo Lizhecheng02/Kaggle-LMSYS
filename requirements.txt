@@ -1,6 +1,6 @@
 pandas
 transformers
-kaggle
+kaggle==1.6.14
 wandb
 scikit-learn
 tqdm
