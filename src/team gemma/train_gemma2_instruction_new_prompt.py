@@ -579,9 +579,12 @@ def train(args):
     # using simple format of showing time
     s = strftime("%a_%d_%b_%H_%M", gmtime())
 
-    wandb.init(project="LMSYS", config=args)
-    wandb.save("train_gemma2_instruction_new_prompt.py")
-    wandb.save("train_gemma2_instruction_new_prompt.yaml")
+    wandb.login(key="c465dd55c08ec111e077cf0454ba111b3a764a78")
+    run = wandb.init(
+        project=f"gemma2-2b",
+        job_type="training",
+        anonymous="allow"
+    )
     # HUGGING FACE MODEL
     MODEL = args.MODEL
 
