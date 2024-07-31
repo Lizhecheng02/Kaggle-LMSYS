@@ -715,7 +715,7 @@ def train(args):
             lora_alpha=args.lora_alpha,
             lora_dropout=args.lora_dropout,
             #bias = 'none',
-            target_modules=['q_proj','k_proj','v_proj','o_proj'] #,
+            target_modules=['q_proj','k_proj','v_proj','up_proj','down_proj'] #,
         )
         model = get_peft_model(model, peft_config)
     print(model.print_trainable_parameters())
