@@ -15,6 +15,7 @@ pip install -r requirements.txt
 ```bash
 export KAGGLE_USERNAME="your_kaggle_username"
 export KAGGLE_KEY="your_api_key"
+export HF_TOKEN="your_hf_token"
 ```
 
 #### 2. Install unzip
@@ -25,7 +26,6 @@ sudo apt install unzip
 
 #### 3. Download Datasets
 ```bash
-cd data
 kaggle datasets download -d lizhecheng/lmsys-datasets
 unzip lmsys-datasets.zip
 ```
