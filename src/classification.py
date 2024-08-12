@@ -50,7 +50,7 @@ def compute_metrics(p):
 
 
 def train(args):
-    wandb.login(key="c465dd55c08ec111e077cf0454ba111b3a764a78")
+    wandb.login(key="")
     run = wandb.init(
         project=f"{args.model_name.split('/')[-1]}_cls",
         job_type="training",
