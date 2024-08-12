@@ -1,10 +1,6 @@
 import wandb
 import os
 import yaml
-# 使用你的API键进行身份验证
-#wandb.login(key="0dc3b3b0446b871143ef4993c923d3e32da9033a")
-#0dc3b3b0446b871143ef4993c923d3e32da9033a
-#os.environ['WANDB_API_KEY'] = "c465dd55c08ec111e077cf0454ba111b3a764a78"
 from transformers import Trainer
 from typing import Any, Callable, Dict, List, NewType, Optional, Tuple, Union
 from utils import load_split_data
@@ -574,7 +570,7 @@ def train(args):
     # using simple format of showing time
     s = strftime("%a_%d_%b_%H_%M", gmtime())
 
-    wandb.login(key="c465dd55c08ec111e077cf0454ba111b3a764a78")
+    wandb.login(key="")
     run = wandb.init(
         project=f"llama3-1",
         job_type="training",

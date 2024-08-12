@@ -457,7 +457,7 @@ def preprocess_logits_for_metrics(logits, labels):
 def train(args):
     s = strftime("%a_%d_%b_%H_%M", gmtime())
 
-    wandb.login(key="c465dd55c08ec111e077cf0454ba111b3a764a78")
+    wandb.login(key="")
     run = wandb.init(
         project=f"{args.MODEL.split('/')[-1]}_instruction",
         job_type="training",
