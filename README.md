@@ -41,10 +41,10 @@ unzip lmsys-lora.zip
 #### 1. In this repo
 ```bash
 cd src
-cd team gemma or cd team llama
+cd team gemma / cd team llama
 python train_xxx.py
 ```
-#### 2. Go to full repo
+#### 2. Go to the full repo
 Click [full-training-code](https://github.com/2200xiaohu/LMSYS)
 
 
@@ -52,7 +52,7 @@ Click [full-training-code](https://github.com/2200xiaohu/LMSYS)
 
 ### 1. Code
 
-Check our code at [LMSYS GitHub](https://github.com/Lizhecheng02/Kaggle-LMSYS)
+Check our code at [LMSYS GitHub](https://github.com/Lizhecheng02/Kaggle-LMSYS).
 
 ### 2. Methodology
 
@@ -91,19 +91,19 @@ A<eos>
 
 ### 3. Training Details
 - 4bit QLoRA on [gemma-2-9b-it](https://huggingface.co/google/gemma-2-9b-it) and [
-Meta-Llama-3.1-8B-Instruct](https://huggingface.co/meta-llama/Meta-Llama-3.1-8B-Instruct), parameters: r = 32, modules = ["q_proj", "k_proj", "v_proj", "o_proj"]
+Meta-Llama-3.1-8B-Instruct](https://huggingface.co/meta-llama/Meta-Llama-3.1-8B-Instruct), parameters: r = 32, modules = ["q_proj", "k_proj", "v_proj", "o_proj"].
 
-- Instruction-tuning instead of classification
-- No gradient_checkpointing_enable() to reduce the training time
-- Used additional 33k data for fine-tuning and sample 10k data to do TTA
+- Instruction-tuning instead of classification.
+- No gradient_checkpointing_enable() to reduce the training time.
+- Used additional 33k data for fine-tuning and sample 10k data to do TTA.
 - Great CV split (80% / 20%) to avoid duplicates between train and validation.
-- GPU: multiple 80GB A100 GPUs + multiple A40 GPUs
+- GPU: multiple 80GB A100 GPUs + multiple A40 GPUs.
 
 ### 4. Not Work
 - Pseudo-label and trained by hard label. (Maybe should consider use KL-loss to use pseudo-label)
 - Only calculate [A, B, C] token loss even doing instruction-tuning, the same as classification task.
 
 ### 5. Conclusion
-Because of some malicious people,, what was once a very stable and meaningful competition has turned into one of the worst in Kaggle's history. It's ridiculous.
+Because of some malicious people, what was once a very stable and meaningful competition has turned into one of the worst in Kaggle's history.
 
 **Thanks to the entire team for everyone's hard work. Let's keep moving forward!**
