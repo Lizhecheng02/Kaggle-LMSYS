@@ -1,0 +1,3 @@
+[submodule "full-training-code"]
+	path = full-training-code
+	url = https://github.com/2200xiaohu/LMSYS.git
