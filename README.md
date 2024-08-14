@@ -100,7 +100,7 @@ Meta-Llama-3.1-8B-Instruct](https://huggingface.co/meta-llama/Meta-Llama-3.1-8B-
 - GPU: multiple 80GB A100 GPUs + multiple A40 GPUs.
 
 ### 4. Not Work
-- Pseudo-label and trained by hard label. (Maybe should consider use KL-loss to use pseudo-label)
+- Pseudo-label and trained by hard label (Maybe should consider use KL-loss to use pseudo-label).
 - Only calculate [A, B, C] token loss even doing instruction-tuning, the same as classification task.
 
 ### 5. Conclusion
