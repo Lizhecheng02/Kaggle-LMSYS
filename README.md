@@ -89,7 +89,7 @@ C. Tie
 A<eos>
 ```
 
-### 3. Training Details
+### 3. Training & Inference Details
 - 4bit QLoRA on [gemma-2-9b-it](https://huggingface.co/google/gemma-2-9b-it) and [
 Meta-Llama-3.1-8B-Instruct](https://huggingface.co/meta-llama/Meta-Llama-3.1-8B-Instruct), parameters: r = 32, modules = ["q_proj", "k_proj", "v_proj", "o_proj"].
 
@@ -98,6 +98,8 @@ Meta-Llama-3.1-8B-Instruct](https://huggingface.co/meta-llama/Meta-Llama-3.1-8B-
 - Used additional 33k data for fine-tuning and sample 10k data to do TTA.
 - Great CV split (80% / 20%) to avoid duplicates between train and validation.
 - GPU: multiple 80GB A100 GPUs + multiple A40 GPUs.
+- Set temperature = 1.03 for inference.
+- Submission1: gemma-2-9b-it + llama-3.1-8b-it + gemma-2-2b-it & Submission2: gemma-2-9b-it + llama-3.1-8b-it + tta.
 
 ### 4. Not Work
 - Pseudo-label and trained by hard label (Maybe should consider use KL-loss to use pseudo-label).
